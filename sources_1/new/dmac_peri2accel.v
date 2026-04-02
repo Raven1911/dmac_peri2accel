@@ -1,4 +1,4 @@
-`timescale 1ns / 1ps
+        `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 // Company: 
 // Engineer: 
@@ -18,6 +18,7 @@
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
+
 module dmac_peri2accel#(
     parameter NUM_MASTERS = 2,
     parameter ADDR_WIDTH = 24,
@@ -46,7 +47,10 @@ module dmac_peri2accel#(
     input                           ARVALID_i,
     output                          ARREADY_o,
     input       [ADDR_WIDTH-1:0]    ARADDR_i,
-    input       [BURST_WIDTH-1:0]   ARBURST_i  
+    input       [BURST_WIDTH-1:0]   ARBURST_i,
+
+    input       [14:0]              weight_write_channel_i, // weight for write channel
+    input       [14:0]              weight_read_channel_i   // weight for read channel
 
 
     );
@@ -63,6 +67,8 @@ module dmac_peri2accel#(
         .resetn_i(resetn_i),
         .enb_grant_i(ready_handshaking),
         .requite_grant_i({ARVALID_i, AWVALID_i}),
+        .weight_write_channel_i(weight_write_channel_i), // weight for write channel
+        .weight_read_channel_i(weight_read_channel_i),  // weight for read channel
         .grant_permission_o(ID_RW_selected)
     );
 
@@ -394,6 +400,8 @@ module arbiter#(
     input                                               resetn_i,
     input                                               enb_grant_i,
     input   [NUM_MASTERS-1:0]                           requite_grant_i,
+    input   [14:0]                                      weight_write_channel_i, // weight for write channel
+    input   [14:0]                                      weight_read_channel_i,  // weight for read channel
 
     output  [NUM_MASTERS-1:0]                           grant_permission_o // id one hot
 
@@ -441,11 +449,13 @@ module arbiter#(
         .tick_count_i(enb_grant_i),
         .resetn_i(resetn_i),
         .grant_permission_i(grant_permission_o),
+        .weight_write_channel_i(weight_write_channel_i), // weight for write channel
+        .weight_read_channel_i(weight_read_channel_i),  // weight for read channel
         .number_o(number_signal)
     );
 
     mux_ID_arbiter #(
-        .NUM_MASTERS(NUM_MASTERS)
+        // .NUM_MASTERS(NUM_MASTERS)
     ) mux_ID_arbiter_unit (
 
         .Master_ID_Selected_i(Master_ID_Map),
@@ -464,6 +474,8 @@ module counter_arbiter#(
     input                                   tick_count_i,
     input                                   resetn_i,  
     input   [1:0]                           grant_permission_i, // id one hot
+    input   [14:0]                          weight_write_channel_i, // weight for write channel
+    input   [14:0]                          weight_read_channel_i, // weight for read channel
 
     output  [$clog2(NUM_MASTERS)-1:0]       number_o
 
@@ -473,8 +485,8 @@ module counter_arbiter#(
 
     reg [$clog2(NUM_MASTERS)-1:0] count_reg, count_next;
 
-    reg [9:0] weight_counter_m0_reg, weight_counter_m0_next;
-    reg [9:0] weight_counter_m1_reg, weight_counter_m1_next;
+    reg [14:0] weight_counter_m0_reg, weight_counter_m0_next;
+    reg [14:0] weight_counter_m1_reg, weight_counter_m1_next;
 
     always @(negedge tick_count_i or negedge resetn_i) begin
         if (~resetn_i) begin
@@ -484,7 +496,7 @@ module counter_arbiter#(
         end
         else begin
             count_reg <= count_next;
-            weight_counter_m0_reg <= weight_counter_m0_next;
+            weight_counter_m0_reg <= weight_counter_m0_next; //m0 write, m1 read
             weight_counter_m1_reg <= weight_counter_m1_next;
         end
     end
@@ -498,14 +510,14 @@ module counter_arbiter#(
         end
         if (grant_permission_i[0]) begin
             weight_counter_m0_next = weight_counter_m0_reg + 1;
-            if (weight_counter_m0_next >= WEIGHT_M0) begin
+            if (weight_counter_m0_next >= weight_write_channel_i) begin
                 weight_counter_m0_next = 0;
                 count_next = count_reg + 1;
             end
         end
         else if (grant_permission_i[1]) begin
             weight_counter_m1_next = weight_counter_m1_reg + 1;
-            if (weight_counter_m1_next >= WEIGHT_M1) begin
+            if (weight_counter_m1_next >= weight_read_channel_i) begin
                 weight_counter_m1_next = 0;
                 count_next = count_reg + 1;
             end
@@ -518,7 +530,7 @@ module counter_arbiter#(
 endmodule
 
 module mux_ID_arbiter#(
-    parameter NUM_MASTERS = 16
+    parameter NUM_MASTERS = 2
 )(
     input   [NUM_MASTERS*NUM_MASTERS-1:0]   Master_ID_Selected_i,
     input   [$clog2(NUM_MASTERS)-1:0]       number_select_i,

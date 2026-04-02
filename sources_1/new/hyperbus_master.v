@@ -19,52 +19,330 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-module hyperbus_master#(
-    parameter W_BURSTLEN = 8,
+// module hyperbus_master#(
+//     parameter W_BURSTLEN = 8,
+//     parameter ADDR_WIDTH_FIFO = 8,
+//     parameter DATA_WIDTH_FIFO = 8,
+//     parameter DATA_WIDTH_BYTE = 1,
+//     parameter INTERFACE_MOD = 1 // 0: FIFO interface, 1: AXIS interface  
+// )(
+// 	input wire                   clk,
+// 	input wire                   rst_n,
+
+// 	// Control
+
+// 	input  wire [47:0]           cmd_addr,      // Full contents of the hyperbus CA packet
+// 	input  wire                  start,         // Start a new DRAM/register access sequence
+// 	output wire                  start_rdy,     // Interface is ready to start a sequence
+// 	input  wire [W_BURSTLEN-1:0] burst_len,     // Number of halfwords to transfer (double number of bytes)
+// 	input  wire [3:0]            latency,       // Number of clocks between CA[23:16] being transferred, and first read/write data. Doubled if RWDS high during CA. >= 2
+// 	input  wire [3:0]            recovery,      // Number of clocks to wait 
+// 	input  wire [1:0]            capture_shmoo, // Capture DQi at 0, 180 or 360 clk degrees (0 90 180 HCLK degrees) after the DDR HCLK
+// 	                                            // edge which causes it to transition to *next* data. 0 degrees probably correct for almost all speeds.
+// 	                                            // 2 -> 0 degrees
+// 	                                            // 1 -> 180 degrees
+// 	                                            // 0 -> 360 degrees
+
+// 	// Data
+// 	input  wire [7:0]            wdata_i,
+// 	input  wire                  wr_i, // Backpressure only. Host must always provide valid data during a write transaction
+// 	output wire [7:0]            rdata_o,
+// 	input  wire                  rd_i, // Forward pressure only. Host must always accept data it has previously requested
+//     output wire                  full_o,
+//     output wire                  empty_o,
+
+// 	// HyperBus
+//     inout   [7:0]                dq_io,
+//     inout                        rwds_io,
+
+// 	output                       hclk_p,  // For 3V RAMs, just use the single-ended (positive) clock
+// 	output                       hclk_n,
+
+// 	output                       cs_n,
+
+//     ////           // AXI-STREAM port//////////////////////////////////////        
+//     ///////////////// AXIS-MASTER port
+//     /////////////////////////////////////////////////
+//     //master interface port
+//     /////////////////////////////////////////////////
+//     output                          m_tvalid_o,
+//     input                           m_tready_i,
+//     output  [DATA_WIDTH_BYTE*8-1:0] m_tdata_o,
+//     output  [DATA_WIDTH_BYTE-1:0]   m_tstrb_o,
+//     output  [DATA_WIDTH_BYTE-1:0]   m_tkeep_o,
+//     output                          m_tlast_o,
+
+//     ///////////////// AXIS-SLAVE port
+//     /////////////////////////////////////////////////
+//     //slave interface port
+//     /////////////////////////////////////////////////
+//     input                           s_tvalid_i,
+//     output                          s_tready_o,
+//     input  [DATA_WIDTH_BYTE*8-1:0]  s_tdata_i,
+//     input  [DATA_WIDTH_BYTE-1:0]    s_tstrb_i,
+//     input  [DATA_WIDTH_BYTE-1:0]    s_tkeep_i,
+//     input                           s_tlast_i,
+
+//     output                          wr_read_fifo_o,
+//     input                           tlast_read_fifo_i,
+//     output                          tlast_write_fifo_o
+// );
+
+//     wire [7:0]            dq_i;
+// 	wire [7:0]            dq_o;
+// 	wire [7:0]            dq_oe;
+
+//     wire                  rwds_i;
+// 	wire                  rwds_o;
+// 	wire                  rwds_oe;
+
+//     // Data ip to fifo
+// 	wire [7:0]            wdata;
+// 	wire                  wdata_rdy; // Backpressure only. Host must always provide valid data during a write transaction
+// 	wire [7:0]            rdata;
+// 	wire                  rdata_vld; // Forward pressure only. Host must always accept data it has previously requested
+
+// 	//wire edge
+// 	wire 				  edge_wr;
+// 	wire 				  edge_rd;
+//     wire                  edge_start;
+
+
+
+//      // ------------------------------------------------------------
+//     // Tri-state buffer mapping
+//     // ------------------------------------------------------------
+//     // DQ bus (8-bit bidirectional)
+//     assign dq_io = dq_oe ? dq_o : 8'bz;  // dq_oe = 1(FF)  dq_io = dq_o, else dq_io = high-Z
+//     assign dq_i  = dq_io;                // for read
+
+//     // RWDS (1-bit bidirectional)
+//     assign rwds_io = rwds_oe ? rwds_o : 1'bz; 
+//     assign rwds_i  = rwds_io;
+
+//     generate
+//         if (INTERFACE_MOD == 0) begin
+//             // ------------------------------------------------------------
+//             // Instance of hyperbus_interface
+//             // ------------------------------------------------------------
+//             hyperbus_interface #(
+//                 .W_BURSTLEN(W_BURSTLEN)
+//             ) dut (
+//                 .clk           (clk),
+//                 .rst_n         (rst_n),
+//                 .cmd_addr      (cmd_addr),
+//                 .start         (edge_start),
+//                 .start_rdy     (start_rdy),
+//                 .burst_len     (burst_len),
+//                 .latency       (latency),
+//                 .recovery      (recovery),
+//                 .capture_shmoo (capture_shmoo),
+//                 .wdata         (wdata),
+//                 .wdata_rdy     (wdata_rdy),
+//                 .rdata         (rdata),
+//                 .rdata_vld     (rdata_vld),
+//                 .dq_i          (dq_i),
+//                 .dq_o          (dq_o),
+//                 .dq_oe         (dq_oe),
+//                 .rwds_i        (rwds_i),
+//                 .rwds_o        (rwds_o),
+//                 .rwds_oe       (rwds_oe),
+//                 .hclk_p        (hclk_p),
+//                 .hclk_n        (hclk_n),
+//                 .cs_n          (cs_n)
+//             );
+
+//             edge_detector_hyperbus edge_start_unit (
+//                 .clk(clk),
+//                 .reset_n(rst_n),
+//                 .level_edge(start),
+//                 .p_edge(edge_start),
+//                 .n_edge(),
+//                 .any_edge()
+//             );
+
+
+//             fifo_hyperbus_unit#(
+//                 .ADDR_WIDTH(ADDR_WIDTH_FIFO),
+//                 .DATA_WIDTH(DATA_WIDTH_FIFO)
+//             ) buffer_wdata (
+//                 .clk(clk), 
+//                 .reset_n(rst_n),
+//                 .wr(edge_wr), 
+//                 .rd(wdata_rdy),
+
+//                 .w_data(wdata_i), //writing data
+//                 .r_data(wdata), //reading data
+
+//                 .full(full_o), 
+//                 .empty()
+//             );
+
+//             edge_detector_hyperbus edge_wdata (
+//                 .clk(clk),
+//                 .reset_n(rst_n),
+//                 .level_edge(wr_i),
+//                 .p_edge(edge_wr),
+//                 .n_edge(),
+//                 .any_edge()
+//             );
+
+//             fifo_hyperbus_unit#(
+//                 .ADDR_WIDTH(ADDR_WIDTH_FIFO),
+//                 .DATA_WIDTH(DATA_WIDTH_FIFO)
+//             ) buffer_rdata (
+//                 .clk(clk), 
+//                 .reset_n(rst_n),
+//                 .wr(rdata_vld), 
+//                 .rd(edge_rd),
+
+//                 .w_data(rdata), //writing data
+//                 .r_data(rdata_o), //reading data
+
+//                 .full(), 
+//                 .empty(empty_o)
+//             );
+
+//             edge_detector_hyperbus edge_rdata (
+//                 .clk(clk),
+//                 .reset_n(rst_n),
+//                 .level_edge(rd_i),
+//                 .p_edge(edge_rd),
+//                 .n_edge(),
+//                 .any_edge()
+//             );
+
+//         end
+
+//         else if (INTERFACE_MOD == 1) begin
+//             hyperbus_interface #(
+//                 .W_BURSTLEN(W_BURSTLEN)
+//             ) dut (
+//                 .clk           (clk),
+//                 .rst_n         (rst_n),
+//                 .cmd_addr      (cmd_addr),
+//                 .start         (start),
+//                 .start_rdy     (start_rdy),
+//                 .burst_len     (burst_len),
+//                 .latency       (latency),
+//                 .recovery      (recovery),
+//                 .capture_shmoo (capture_shmoo),
+
+//                 .wdata         (wdata),
+//                 .wdata_rdy     (wdata_rdy),
+//                 .rdata         (rdata),
+//                 .rdata_vld     (rdata_vld),
+
+//                 .dq_i          (dq_i),
+//                 .dq_o          (dq_o),
+//                 .dq_oe         (dq_oe),
+//                 .rwds_i        (rwds_i),
+//                 .rwds_o        (rwds_o),
+//                 .rwds_oe       (rwds_oe),
+//                 .hclk_p        (hclk_p),
+//                 .hclk_n        (hclk_n),
+//                 .cs_n          (cs_n)
+//             );
+//             // DUT Master
+//             axi4_stream #(
+//                 .DATA_WIDTH_BYTE(DATA_WIDTH_BYTE), 
+//                 .SELECT_INTERFACE(0), 
+//                 .SIZE_FIFO(8)
+//             ) fifo_m (
+//                 .aclk_i(clk), 
+//                 .aresetn_i(rst_n), 
+//                 .m_tvalid_o(m_tvalid_o), 
+//                 .m_tready_i(m_tready_i), 
+//                 .m_tdata_o(m_tdata_o), 
+//                 .m_tstrb_o(m_tstrb_o), 
+//                 .m_tkeep_o(m_tkeep_o), 
+//                 .m_tlast_o(m_tlast_o), 
+//                 .user_m_busy_o(), 
+//                 .user_m_wr_data_i(rdata_vld), 
+//                 .user_m_data_i(rdata), 
+//                 .user_m_tstrb_i(1), 
+//                 .user_m_tkeep_i(1), 
+//                 .user_m_tlast_i(tlast_read_fifo_i),
+
+//                 .s_tready_o(), 
+//                 .user_s_ready_o(), 
+//                 .user_s_data_o());     
+//             end
+//             assign wr_read_fifo_o = rdata_vld;
+
+
+//             axi4_stream #(
+//                 .DATA_WIDTH_BYTE(DATA_WIDTH_BYTE), 
+//                 .SELECT_INTERFACE(1), 
+//                 .SIZE_FIFO(8)
+//             ) fifo_s (
+//                 .aclk_i(clk), 
+//                 .aresetn_i(rst_n), 
+//                 .s_tvalid_i(s_tvalid_i), 
+//                 .s_tready_o(s_tready_o), 
+//                 .s_tdata_i(s_tdata_i), 
+//                 .s_tstrb_i(s_tstrb_i), 
+//                 .s_tkeep_i(s_tkeep_i), 
+//                 .s_tlast_i(s_tlast_i), 
+//                 .user_s_ready_o(), 
+//                 .user_s_rd_data_i(wdata_rdy), 
+//                 .user_s_data_o(wdata), 
+//                 .user_s_tstrb_o(), 
+//                 .user_s_tkeep_o(), 
+//                 .user_s_tlast_o(tlast_write_fifo_o), 
+//                 .m_tvalid_o(), 
+//                 .user_m_busy_o());
+                    
+                
+//     endgenerate
+
+
+
+
+
+// endmodule
+
+module hyperbus_master #(
+    parameter W_BURSTLEN      = 8,
     parameter ADDR_WIDTH_FIFO = 8,
     parameter DATA_WIDTH_FIFO = 8,
-    parameter DATA_WIDTH_BYTE = 1,
-    parameter INTERFACE_MOD = 1 // 0: FIFO interface, 1: AXIS interface  
+    parameter DATA_WIDTH_BYTE = 1
 )(
-	input wire                   clk,
-	input wire                   rst_n,
+    // ========================================================
+    // 1. SYSTEM SIGNALS
+    // ========================================================
+    input                           clk,
+    input                           rst_n,
+    input                           mode_sel,       // 0: CPU Mode (FIFO) | 1: Accel Mode (AXI-Stream)
 
-	// Control
+    // ========================================================
+    // 2. HYPERBUS CONTROL CONFIGURATION
+    // ========================================================
+    input   [47:0]                  cmd_addr,
+    input                           start,
+    output                          start_rdy,
+    input   [W_BURSTLEN-1:0]        burst_len,
+    input   [3:0]                   latency,
+    input   [3:0]                   recovery,
+    input   [1:0]                   capture_shmoo,
 
-	input  wire [47:0]           cmd_addr,      // Full contents of the hyperbus CA packet
-	input  wire                  start,         // Start a new DRAM/register access sequence
-	output wire                  start_rdy,     // Interface is ready to start a sequence
-	input  wire [W_BURSTLEN-1:0] burst_len,     // Number of halfwords to transfer (double number of bytes)
-	input  wire [3:0]            latency,       // Number of clocks between CA[23:16] being transferred, and first read/write data. Doubled if RWDS high during CA. >= 2
-	input  wire [3:0]            recovery,      // Number of clocks to wait 
-	input  wire [1:0]            capture_shmoo, // Capture DQi at 0, 180 or 360 clk degrees (0 90 180 HCLK degrees) after the DDR HCLK
-	                                            // edge which causes it to transition to *next* data. 0 degrees probably correct for almost all speeds.
-	                                            // 2 -> 0 degrees
-	                                            // 1 -> 180 degrees
-	                                            // 0 -> 360 degrees
+    // ========================================================
+    // 3. CPU PORT (BASIC FIFO INTERFACE)
+    // ========================================================
+    // --- CPU Write Port ---
+    input   [7:0]                   wdata_cpu_i,    // CPU write data
+    input                           wr_cpu_i,       // CPU write pulse (level)
+    output                          full_cpu_o,     // FIFO full status for CPU
+    
+    // --- CPU Read Port ---
+    output  [7:0]                   rdata_cpu_o,    // CPU read data
+    input                           rd_cpu_i,       // CPU read pulse (level)
+    output                          empty_cpu_o,    // FIFO empty status for CPU
 
-	// Data
-	input  wire [7:0]            wdata_i,
-	input  wire                  wr_i, // Backpressure only. Host must always provide valid data during a write transaction
-	output wire [7:0]            rdata_o,
-	input  wire                  rd_i, // Forward pressure only. Host must always accept data it has previously requested
-    output wire                  full_o,
-    output wire                  empty_o,
-
-	// HyperBus
-    inout   [7:0]                dq_io,
-    inout                        rwds_io,
-
-	output                       hclk_p,  // For 3V RAMs, just use the single-ended (positive) clock
-	output                       hclk_n,
-
-	output                       cs_n,
-
-    ////           // AXI-STREAM port//////////////////////////////////////        
-    ///////////////// AXIS-MASTER port
-    /////////////////////////////////////////////////
-    //master interface port
-    /////////////////////////////////////////////////
+    // ========================================================
+    // 4. ACCEL PORT (AXI-STREAM INTERFACE)
+    // ========================================================
+    // --- AXIS Master Port (Read data out for Accel) ---
     output                          m_tvalid_o,
     input                           m_tready_i,
     output  [DATA_WIDTH_BYTE*8-1:0] m_tdata_o,
@@ -72,233 +350,218 @@ module hyperbus_master#(
     output  [DATA_WIDTH_BYTE-1:0]   m_tkeep_o,
     output                          m_tlast_o,
 
-    ///////////////// AXIS-SLAVE port
-    /////////////////////////////////////////////////
-    //slave interface port
-    /////////////////////////////////////////////////
+    // --- AXIS Slave Port (Write data in from Accel) ---
     input                           s_tvalid_i,
     output                          s_tready_o,
-    input  [DATA_WIDTH_BYTE*8-1:0]  s_tdata_i,
-    input  [DATA_WIDTH_BYTE-1:0]    s_tstrb_i,
-    input  [DATA_WIDTH_BYTE-1:0]    s_tkeep_i,
+    input   [DATA_WIDTH_BYTE*8-1:0] s_tdata_i,
+    input   [DATA_WIDTH_BYTE-1:0]   s_tstrb_i,
+    input   [DATA_WIDTH_BYTE-1:0]   s_tkeep_i,
     input                           s_tlast_i,
 
+    // ========================================================
+    // 5. EXTERNAL HYPERBUS PHYSICAL PINS & FIFO STATUS
+    // ========================================================
+    inout   [7:0]                   dq_io,
+    inout                           rwds_io,
+    output                          hclk_p,
+    output                          hclk_n,
+    output                          cs_n,
+    
     output                          wr_read_fifo_o,
     input                           tlast_read_fifo_i,
     output                          tlast_write_fifo_o
 );
 
-    wire [7:0]            dq_i;
-	wire [7:0]            dq_o;
-	wire [7:0]            dq_oe;
+    // ========================================================
+    // INTERNAL SIGNALS DECLARATION (NO DIRECT ASSIGNMENT)
+    // ========================================================
+    // HyperBus Tristate buffers
+    wire [7:0]                      dq_i, dq_o, dq_oe;
+    wire                            rwds_i, rwds_o, rwds_oe;
 
-    wire                  rwds_i;
-	wire                  rwds_o;
-	wire                  rwds_oe;
+    // Interface Core Data Paths
+    wire [7:0]                      wdata;
+    wire                            wdata_rdy; 
+    wire [7:0]                      rdata;
+    wire                            rdata_vld; 
 
-    // Data ip to fifo
-	wire [7:0]            wdata;
-	wire                  wdata_rdy; // Backpressure only. Host must always provide valid data during a write transaction
-	wire [7:0]            rdata;
-	wire                  rdata_vld; // Forward pressure only. Host must always accept data it has previously requested
+    // Edge Detectors for CPU pulses
+    wire                            edge_wr;
+    wire                            edge_rd;
+    wire                            edge_start;
 
-	//wire edge
-	wire 				  edge_wr;
-	wire 				  edge_rd;
-    wire                  edge_start;
+    // AXIS FIFO Internal Links
+    wire                            internal_s_tready;
+    wire                            internal_m_tvalid;
+    wire [7:0]                      internal_m_tdata;
 
+    // Intermediate MUX signals
+    wire                            mux_start;
+    wire                            mux_s_tvalid;
+    wire [7:0]                      mux_s_tdata;
+    wire [DATA_WIDTH_BYTE-1:0]      mux_s_tstrb;
+    wire [DATA_WIDTH_BYTE-1:0]      mux_s_tkeep;
+    wire                            mux_s_tlast;
+    wire                            mux_m_tready;
 
-
-     // ------------------------------------------------------------
-    // Tri-state buffer mapping
-    // ------------------------------------------------------------
-    // DQ bus (8-bit bidirectional)
-    assign dq_io = dq_oe ? dq_o : 8'bz;  // dq_oe = 1(FF)  dq_io = dq_o, else dq_io = high-Z
-    assign dq_i  = dq_io;                // for read
-
-    // RWDS (1-bit bidirectional)
+    // ========================================================
+    // ASSIGNMENTS AND MUX LOGIC
+    // ========================================================
+    
+    // Tristate Buffer Assignments
+    assign dq_io   = dq_oe   ? dq_o   : 8'bz;
+    assign dq_i    = dq_io;                
     assign rwds_io = rwds_oe ? rwds_o : 1'bz; 
     assign rwds_i  = rwds_io;
 
-    generate
-        if (INTERFACE_MOD == 0) begin
-            // ------------------------------------------------------------
-            // Instance of hyperbus_interface
-            // ------------------------------------------------------------
-            hyperbus_interface #(
-                .W_BURSTLEN(W_BURSTLEN)
-            ) dut (
-                .clk           (clk),
-                .rst_n         (rst_n),
-                .cmd_addr      (cmd_addr),
-                .start         (edge_start),
-                .start_rdy     (start_rdy),
-                .burst_len     (burst_len),
-                .latency       (latency),
-                .recovery      (recovery),
-                .capture_shmoo (capture_shmoo),
-                .wdata         (wdata),
-                .wdata_rdy     (wdata_rdy),
-                .rdata         (rdata),
-                .rdata_vld     (rdata_vld),
-                .dq_i          (dq_i),
-                .dq_o          (dq_o),
-                .dq_oe         (dq_oe),
-                .rwds_i        (rwds_i),
-                .rwds_o        (rwds_o),
-                .rwds_oe       (rwds_oe),
-                .hclk_p        (hclk_p),
-                .hclk_n        (hclk_n),
-                .cs_n          (cs_n)
-            );
+    // 1. Start Control MUX
+    assign mux_start    = mode_sel ? start      : edge_start;
 
-            edge_detector_hyperbus edge_start_unit (
-                .clk(clk),
-                .reset_n(rst_n),
-                .level_edge(start),
-                .p_edge(edge_start),
-                .n_edge(),
-                .any_edge()
-            );
+    // 2. WRITE Path: Routing to AXI-Stream Slave FIFO
+    assign mux_s_tvalid = mode_sel ? s_tvalid_i : edge_wr;
+    assign mux_s_tdata  = mode_sel ? s_tdata_i  : wdata_cpu_i;
+    assign mux_s_tstrb  = mode_sel ? s_tstrb_i  : {DATA_WIDTH_BYTE{1'b1}};
+    assign mux_s_tkeep  = mode_sel ? s_tkeep_i  : {DATA_WIDTH_BYTE{1'b1}};
+    assign mux_s_tlast  = mode_sel ? s_tlast_i  : 1'b0;
 
+    assign s_tready_o   = mode_sel ? internal_s_tready : 1'b0;
+    assign full_cpu_o   = mode_sel ? 1'b1              : ~internal_s_tready;
 
-            fifo_hyperbus_unit#(
-                .ADDR_WIDTH(ADDR_WIDTH_FIFO),
-                .DATA_WIDTH(DATA_WIDTH_FIFO)
-            ) buffer_wdata (
-                .clk(clk), 
-                .reset_n(rst_n),
-                .wr(edge_wr), 
-                .rd(wdata_rdy),
+    // 3. READ Path: Fetching from AXI-Stream Master FIFO
+    assign mux_m_tready = mode_sel ? m_tready_i : edge_rd;
 
-                .w_data(wdata_i), //writing data
-                .r_data(wdata), //reading data
+    assign m_tvalid_o   = mode_sel ? internal_m_tvalid : 1'b0;
+    assign m_tdata_o    = internal_m_tdata;
+    
+    assign empty_cpu_o  = mode_sel ? 1'b1              : ~internal_m_tvalid;
+    assign rdata_cpu_o  = internal_m_tdata;
+    
+    assign wr_read_fifo_o = rdata_vld;
 
-                .full(full_o), 
-                .empty()
-            );
+    // ========================================================
+    // CPU PULSE CONVERSION (LEVEL TO EDGE)
+    // ========================================================
+    edge_detector_hyperbus edge_start_unit (
+        .clk        (clk), 
+        .reset_n    (rst_n), 
+        .level_edge (start), 
+        .p_edge     (edge_start), 
+        .n_edge     (), 
+        .any_edge   ()
+    );
 
-            edge_detector_hyperbus edge_wdata (
-                .clk(clk),
-                .reset_n(rst_n),
-                .level_edge(wr_i),
-                .p_edge(edge_wr),
-                .n_edge(),
-                .any_edge()
-            );
+    edge_detector_hyperbus edge_wdata_unit (
+        .clk        (clk), 
+        .reset_n    (rst_n), 
+        .level_edge (wr_cpu_i), 
+        .p_edge     (edge_wr), 
+        .n_edge     (), 
+        .any_edge   ()
+    );
 
-            fifo_hyperbus_unit#(
-                .ADDR_WIDTH(ADDR_WIDTH_FIFO),
-                .DATA_WIDTH(DATA_WIDTH_FIFO)
-            ) buffer_rdata (
-                .clk(clk), 
-                .reset_n(rst_n),
-                .wr(rdata_vld), 
-                .rd(edge_rd),
+    edge_detector_hyperbus edge_rdata_unit (
+        .clk        (clk), 
+        .reset_n    (rst_n), 
+        .level_edge (rd_cpu_i), 
+        .p_edge     (edge_rd), 
+        .n_edge     (), 
+        .any_edge   ()
+    );
 
-                .w_data(rdata), //writing data
-                .r_data(rdata_o), //reading data
+    // ========================================================
+    // PHYSICAL MODULES INSTANTIATION
+    // ========================================================
+    
+    // --- HYPERBUS CONTROL CORE ---
+    hyperbus_interface #(
+        .W_BURSTLEN     (W_BURSTLEN)
+    ) dut (
+        .clk            (clk), 
+        .rst_n          (rst_n),
+        .cmd_addr       (cmd_addr), 
+        .start          (mux_start), 
+        .start_rdy      (start_rdy),
+        .burst_len      (burst_len), 
+        .latency        (latency), 
+        .recovery       (recovery), 
+        .capture_shmoo  (capture_shmoo),
+        
+        .wdata          (wdata), 
+        .wdata_rdy      (wdata_rdy),
+        .rdata          (rdata), 
+        .rdata_vld      (rdata_vld),
+        
+        .dq_i           (dq_i), 
+        .dq_o           (dq_o), 
+        .dq_oe          (dq_oe),
+        .rwds_i         (rwds_i), 
+        .rwds_o         (rwds_o), 
+        .rwds_oe        (rwds_oe),
+        .hclk_p         (hclk_p), 
+        .hclk_n         (hclk_n), 
+        .cs_n           (cs_n)
+    );
 
-                .full(), 
-                .empty(empty_o)
-            );
+    // --- READ FIFO CORE (AXI-Stream Master) ---
+    axi4_stream #(
+        .DATA_WIDTH_BYTE  (DATA_WIDTH_BYTE), 
+        .SELECT_INTERFACE (0), 
+        .SIZE_FIFO        (8)
+    ) fifo_m (
+        .aclk_i           (clk), 
+        .aresetn_i        (rst_n), 
+        
+        // Output Ports
+        .m_tvalid_o       (internal_m_tvalid), 
+        .m_tready_i       (mux_m_tready), 
+        .m_tdata_o        (internal_m_tdata), 
+        .m_tstrb_o        (m_tstrb_o), 
+        .m_tkeep_o        (m_tkeep_o), 
+        .m_tlast_o        (m_tlast_o), 
+        
+        // Input Ports from Hyperbus Interface
+        .user_m_wr_data_i (rdata_vld), 
+        .user_m_data_i    (rdata), 
+        .user_m_tstrb_i   ({DATA_WIDTH_BYTE{1'b1}}), 
+        .user_m_tkeep_i   ({DATA_WIDTH_BYTE{1'b1}}), 
+        .user_m_tlast_i   (tlast_read_fifo_i),
+        
+        // Unused Ports
+        .user_m_busy_o    (), 
+        .s_tready_o       (), 
+        .user_s_ready_o   (), 
+        .user_s_data_o    ()
+    );     
 
-            edge_detector_hyperbus edge_rdata (
-                .clk(clk),
-                .reset_n(rst_n),
-                .level_edge(rd_i),
-                .p_edge(edge_rd),
-                .n_edge(),
-                .any_edge()
-            );
-
-        end
-
-        else if (INTERFACE_MOD == 1) begin
-            hyperbus_interface #(
-                .W_BURSTLEN(W_BURSTLEN)
-            ) dut (
-                .clk           (clk),
-                .rst_n         (rst_n),
-                .cmd_addr      (cmd_addr),
-                .start         (start),
-                .start_rdy     (start_rdy),
-                .burst_len     (burst_len),
-                .latency       (latency),
-                .recovery      (recovery),
-                .capture_shmoo (capture_shmoo),
-
-                .wdata         (wdata),
-                .wdata_rdy     (wdata_rdy),
-                .rdata         (rdata),
-                .rdata_vld     (rdata_vld),
-
-                .dq_i          (dq_i),
-                .dq_o          (dq_o),
-                .dq_oe         (dq_oe),
-                .rwds_i        (rwds_i),
-                .rwds_o        (rwds_o),
-                .rwds_oe       (rwds_oe),
-                .hclk_p        (hclk_p),
-                .hclk_n        (hclk_n),
-                .cs_n          (cs_n)
-            );
-            // DUT Master
-            axi4_stream #(
-                .DATA_WIDTH_BYTE(DATA_WIDTH_BYTE), 
-                .SELECT_INTERFACE(0), 
-                .SIZE_FIFO(8)
-            ) fifo_m (
-                .aclk_i(clk), 
-                .aresetn_i(rst_n), 
-                .m_tvalid_o(m_tvalid_o), 
-                .m_tready_i(m_tready_i), 
-                .m_tdata_o(m_tdata_o), 
-                .m_tstrb_o(m_tstrb_o), 
-                .m_tkeep_o(m_tkeep_o), 
-                .m_tlast_o(m_tlast_o), 
-                .user_m_busy_o(), 
-                .user_m_wr_data_i(rdata_vld), 
-                .user_m_data_i(rdata), 
-                .user_m_tstrb_i(1), 
-                .user_m_tkeep_i(1), 
-                .user_m_tlast_i(tlast_read_fifo_i),
-
-                .s_tready_o(), 
-                .user_s_ready_o(), 
-                .user_s_data_o());     
-            end
-            assign wr_read_fifo_o = rdata_vld;
-
-
-            axi4_stream #(
-                .DATA_WIDTH_BYTE(DATA_WIDTH_BYTE), 
-                .SELECT_INTERFACE(1), 
-                .SIZE_FIFO(8)
-            ) fifo_s (
-                .aclk_i(clk), 
-                .aresetn_i(rst_n), 
-                .s_tvalid_i(s_tvalid_i), 
-                .s_tready_o(s_tready_o), 
-                .s_tdata_i(s_tdata_i), 
-                .s_tstrb_i(s_tstrb_i), 
-                .s_tkeep_i(s_tkeep_i), 
-                .s_tlast_i(s_tlast_i), 
-                .user_s_ready_o(), 
-                .user_s_rd_data_i(wdata_rdy), 
-                .user_s_data_o(wdata), 
-                .user_s_tstrb_o(), 
-                .user_s_tkeep_o(), 
-                .user_s_tlast_o(tlast_write_fifo_o), 
-                .m_tvalid_o(), 
-                .user_m_busy_o());
-                    
-                
-    endgenerate
-
-
-
-
+    // --- WRITE FIFO CORE (AXI-Stream Slave) ---
+    axi4_stream #(
+        .DATA_WIDTH_BYTE  (DATA_WIDTH_BYTE), 
+        .SELECT_INTERFACE (1), 
+        .SIZE_FIFO        (8)
+    ) fifo_s (
+        .aclk_i           (clk), 
+        .aresetn_i        (rst_n), 
+        
+        // Input Ports
+        .s_tvalid_i       (mux_s_tvalid), 
+        .s_tready_o       (internal_s_tready), 
+        .s_tdata_i        (mux_s_tdata), 
+        .s_tstrb_i        (mux_s_tstrb), 
+        .s_tkeep_i        (mux_s_tkeep), 
+        .s_tlast_i        (mux_s_tlast), 
+        
+        // Output Ports to Hyperbus Interface
+        .user_s_rd_data_i (wdata_rdy), 
+        .user_s_data_o    (wdata), 
+        .user_s_tlast_o   (tlast_write_fifo_o), 
+        
+        // Unused Ports
+        .user_s_ready_o   (), 
+        .user_s_tstrb_o   (), 
+        .user_s_tkeep_o   (), 
+        .m_tvalid_o       (), 
+        .user_m_busy_o    ()
+    );
 
 endmodule
 

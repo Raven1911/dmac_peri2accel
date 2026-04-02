@@ -202,7 +202,7 @@ module tb_dmac_peri2accel_top();
         // Nếu bạn muốn bỏ comment phần TEST CASE 2 (Đọc), nhớ đổi các #delay trong đó 
         // (ví dụ #100 thành #100000) nhé!
 
-
+    
         // ============================================================
         // TEST CASE 2: ĐỌC NGƯỢC LẠI DỮ LIỆU QUA AXIS MASTER
         // ============================================================

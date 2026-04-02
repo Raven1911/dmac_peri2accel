@@ -103,8 +103,8 @@ module axi4_stream#(
                 .reset_n(aresetn_i),
                 .wr(user_m_wr_data_i && !user_m_busy_o), 
                 .rd(rd_fifo_o),
-                .wr_ptr(),
-                .rd_ptr(),
+                // .wr_ptr(),
+                // .rd_ptr(),
                 .w_data({user_m_tlast_i, user_m_tkeep_i, user_m_tstrb_i, user_m_data_i}),                //writing data
                 .r_data({m_tlast_o, m_tkeep_o, m_tstrb_o, m_tdata_o}),                    //reading data
                 .full(full_i),
@@ -137,8 +137,8 @@ module axi4_stream#(
                 .reset_n(aresetn_i),
                 .wr(wr_fifo_o), 
                 .rd(user_s_rd_data_i && user_s_ready_o),
-                .wr_ptr(),
-                .rd_ptr(),
+                // .wr_ptr(),
+                // .rd_ptr(),
                 .w_data({s_tlast_i, s_tkeep_i, s_tstrb_i, s_tdata_i}),                                       //writing data
                 .r_data({user_s_tlast_o, user_s_tkeep_o, user_s_tstrb_o, user_s_data_o}),                    //reading data
                 .full(full_i),
@@ -250,25 +250,25 @@ endmodule
 
 
 
-module register_DFF#(
-    parameter SIZE_BITS = 32
-)(  
-    input                           clk_i,
-    input                           resetn_i,
-    input       [SIZE_BITS-1:0]    D_i,
+// module register_DFF#(
+//     parameter SIZE_BITS = 32
+// )(  
+//     input                           clk_i,
+//     input                           resetn_i,
+//     input       [SIZE_BITS-1:0]    D_i,
 
-    output  reg [SIZE_BITS-1:0]    Q_o
-);
-    always @(posedge clk_i, negedge resetn_i) begin
-        if (~resetn_i) begin
-            Q_o <= 0;
-        end
-        else begin
-            Q_o <= D_i;
-        end
-    end
+//     output  reg [SIZE_BITS-1:0]    Q_o
+// );
+//     always @(posedge clk_i, negedge resetn_i) begin
+//         if (~resetn_i) begin
+//             Q_o <= 0;
+//         end
+//         else begin
+//             Q_o <= D_i;
+//         end
+//     end
 
-endmodule
+// endmodule
 
 
 
